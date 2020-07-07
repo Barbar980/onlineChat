@@ -30,6 +30,10 @@ public class ServerWorker extends Thread{
         }
     }
 
+    public String getLogin(){
+        return login;
+    }
+
     private void handleClientSocket() throws IOException, InterruptedException {
         InputStream inputStream = clientSocket.getInputStream();
         this.outputStream = clientSocket.getOutputStream();
@@ -40,7 +44,8 @@ public class ServerWorker extends Thread{
             String[] tokens = StringUtils.split(line);
             if(tokens!=null && tokens.length>0){
                 String cmd = tokens[0];
-                if("quit".equalsIgnoreCase(cmd)){
+                if("logoff".equalsIgnoreCase(cmd)||"quit".equalsIgnoreCase(cmd)){
+                    handleLogoff();
                     break;
                 } else if("login".equalsIgnoreCase(cmd)){
                     handleLogin(outputStream, tokens);
@@ -53,8 +58,23 @@ public class ServerWorker extends Thread{
         clientSocket.close();
     }
 
-    public String getLogin(){
-        return login;
+
+
+
+
+    private void handleLogoff() throws IOException {
+        clientSocket.close();
+
+        List<ServerWorker> workerList = server.getWorkerList();
+
+        String onlineMsg = "offline "+login+"\n";
+        for(ServerWorker worker : workerList){
+            if(!login.equals(worker.getLogin())) {
+                worker.send(onlineMsg);
+            }
+        }
+
+
     }
 
     private void handleLogin(OutputStream outputStream, String[] tokens) throws IOException {
@@ -62,22 +82,28 @@ public class ServerWorker extends Thread{
             String login = tokens[1];
             String password = tokens[2];
 
-            if((login.equals("guest") && password.equals("guest")) || (login.equals("jim") && password.equals("jim"))){
+            if((login.equals("guest") && password.equals("guest")) || (login.equals("jim") && password.equals("jim")) || (login.equals("test") && password.equals("test"))){
                 String msg = "login ok\n";
                 outputStream.write(msg.getBytes());
                 this.login = login;
                 System.out.println("User logged in succesfully: "+login);
 
-                List<ServerWorker> workerList = server.getWorkerList();
 
+                List<ServerWorker> workerList = server.getWorkerList();
                 for(ServerWorker worker: workerList){
-                    String msg2 = "online "+worker.getLogin()+"\n";
-                    worker.send(msg2);
+                    if(!login.equals(worker.getLogin())) {
+                        if (worker.getLogin() != null) {
+                            String msg2 = "online " + worker.getLogin() + "******\n";
+                            send(msg2);
+                        }
+                    }
                 }
 
                 String onlineMsg = "online "+login+"\n";
                 for(ServerWorker worker : workerList){
-                    worker.send(onlineMsg);
+                    if(!login.equals(worker.getLogin())) {
+                        worker.send(onlineMsg);
+                    }
                 }
             }
             else{
@@ -88,7 +114,12 @@ public class ServerWorker extends Thread{
         }
     }
 
+
+
     private void send(String msg) throws IOException {
-        outputStream.write(msg.getBytes());
+        if (login!= null){
+            outputStream.write(msg.getBytes());
+        }
+
     }
 }

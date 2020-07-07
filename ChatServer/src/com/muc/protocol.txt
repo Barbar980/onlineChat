@@ -24,3 +24,5 @@ Commands:
 java commnos-lang3-3.4.jar
 java logback-classic-1.1.3
 java logback-core-1.1.3.jar
+
+telnet localhost 8818
