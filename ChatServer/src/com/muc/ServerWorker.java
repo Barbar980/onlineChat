@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
@@ -32,6 +31,25 @@ public class ServerWorker extends Thread{
         }
     }
 
+
+    /*
+        @Override
+    public void run() {
+        try {
+            handleClientSocket();
+        } catch (IOException e) {
+            if(e.getMessage().equalsIgnoreCase("Connection reset")){
+                System.out.println("Client disconnected..Waiting for another connection");
+            }else{
+                e.printStackTrace();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+     */
+
+
     public String getLogin(){
         return login;
     }
@@ -54,8 +72,10 @@ public class ServerWorker extends Thread{
                 }else if("msg".equalsIgnoreCase(cmd)) {
                     String[] tokensMsg = StringUtils.split(line, null, 3);
                     handleMessage(tokensMsg);
-                }else if("join".equalsIgnoreCase(cmd)){
+                }else if("join".equalsIgnoreCase(cmd)) {
                     handleJoin(tokens);
+                }else if("leave".equalsIgnoreCase(cmd)){
+                    handleLeave(tokens);
                 } else {
                     String msg = "unknown " + cmd + "\n";
                     outputStream.write(msg.getBytes());
@@ -63,6 +83,14 @@ public class ServerWorker extends Thread{
             }
         }
         clientSocket.close();
+    }
+
+    private void handleLeave(String[] tokens) {
+        if(tokens.length>1) {
+            String topic = tokens[1];
+            topicSet.remove(topic);
+        }
+        System.out.println(topicSet);
     }
 
     public boolean isMemberOfTopic(String topic){
@@ -92,7 +120,7 @@ public class ServerWorker extends Thread{
             if(isTopic){
 
                 if(worker.isMemberOfTopic(sendTo)){
-                    String outMsg ="msg "+login+" "+body+"\n";
+                    String outMsg ="msg "+sendTo+" :"+login+" "+body+"\n";
                     worker.send(outMsg);
                 }
             }else{
@@ -138,14 +166,14 @@ public class ServerWorker extends Thread{
                 for(ServerWorker worker: workerList){
                     if(!login.equals(worker.getLogin())) {
                         if (worker.getLogin() != null) {
-                            String msg2 = "Juz zalogowany " + worker.getLogin() + "******\n"; // pokazuje online podczas logowania
+                            String msg2 = "online " + worker.getLogin()+"\n";; // pokazuje online podczas logowania
                             send(msg2);
                         }
                     }
                 }
 
                 //INFORMACJA DLA ZALOGOWANYCH
-                String onlineMsg = "Przed chwila sie zalogowal "+login+"\n"; //Pokazuje zalogowanym uzytkownim kto sie zalogowal
+                String onlineMsg = "online "+login+"\n"; //Pokazuje zalogowanym uzytkownim kto sie zalogowal
                 for(ServerWorker worker : workerList){
                     if(!login.equals(worker.getLogin())) {
                         worker.send(onlineMsg);
@@ -155,6 +183,7 @@ public class ServerWorker extends Thread{
             else{
                 String msg = "error login\n";
                 outputStream.write(msg.getBytes());
+                System.err.println("Login failed for "+login);
             }
 
         }
