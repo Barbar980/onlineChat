@@ -1,5 +1,6 @@
 package com.muc;
 
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -8,8 +9,8 @@ import java.util.ArrayList;
 
 
 public class ChatClient {
-    private String serverName;
-    private int serverPort;
+    private final String serverName;
+    private final int serverPort;
     private Socket socket;
     private InputStream serverIn;
     private OutputStream serverOut;
@@ -25,6 +26,7 @@ public class ChatClient {
     }
 
     public static void main(String[] args) throws IOException {
+
         ChatClient client = new ChatClient("localhost", 8818);
         client.addUserStatusListener(new UserStatusListener() {
             @Override
@@ -45,40 +47,61 @@ public class ChatClient {
             }
         });
 
-        if(!client.connect()){
-            System.out.println("Connect failed");
-        } else{
-            System.out.println("Connect successful");
+//        if(!client.connect()){
+//            System.out.println("Connect failed");
+//        } else{
+//            System.out.println("Connect successful");
+//            if(client.login("guest", "guest")){
+//                System.out.println("Login successful");
+//
+//                client.msg("jim", "Hello!!!");
+//
+//
+//
+//
+//            } else {
+//                System.err.println("Login failed");
+//            }
+//           client.d();
+//        }
+
+        if(client.connect()){
+            System.out.println("Conneed");
             if(client.login("guest", "guest")){
                 System.out.println("Login successful");
-                
-                client.msg("jim", "Hi world");
+
+
+                //Bez funkcji offline nie dziala czat
+                client.msg("jim", "Hello!!!");
+                client.bufferDontKnowHowItWork();
+
+
+
+
+
             } else {
                 System.err.println("Login failed");
             }
+
         }
-        
-        //client.logoff();
-
-        /*
-        i dont now why but work...
-         */
-//        while(true){
-//
-//        }
-
-
-
 
     }
 
+
+
     public void msg(String sendTo, String msgBody) throws IOException {
-        String cmd = "login "+sendTo+" "+msgBody;
+        String cmd = "msg "+sendTo+" "+msgBody;
         serverOut.write(cmd.getBytes());
     }
 
-    public void logoff() throws IOException{
-        String cmd = "logoff\n";
+    private void d() throws IOException{
+        String cmd = "Offline\n";
+        serverOut.write(cmd.getBytes());
+    }
+
+    //Bez funkcji nie dziala czat
+    public void bufferDontKnowHowItWork() throws IOException{
+        String cmd = "\n";
         serverOut.write(cmd.getBytes());
     }
 
@@ -89,7 +112,7 @@ public class ChatClient {
         String response = bufferedIn.readLine();
         System.out.println("Response line: "+response);
 
-        if(response.equals("login ok")){
+        if("login ok".equalsIgnoreCase(response)){
             startMessageReader();
 
             return true;
@@ -98,7 +121,7 @@ public class ChatClient {
         }
     }
 
-    public void startMessageReader() {
+    private void startMessageReader() {
         Thread t =new Thread(){
             @Override
             public void run() {
@@ -108,7 +131,7 @@ public class ChatClient {
         t.start();
     }
 
-    public void readMessageLoop() {
+    private void readMessageLoop() {
         try {
             String line;
             while ((line = bufferedIn.readLine()) != null) {
@@ -136,7 +159,7 @@ public class ChatClient {
         }
     }
 
-    public void handleMessage(String[] tokensMsg) {
+    private void handleMessage(String[] tokensMsg) {
         String login = tokensMsg[1];
         String msgBody  = tokensMsg[2];
 
@@ -145,14 +168,14 @@ public class ChatClient {
         }
     }
 
-    public void handleOffline(String[] tokens) {
+    private void handleOffline(String[] tokens) {
         String login = tokens[1];
         for(UserStatusListener listener : userStatusListeners){
             listener.offline(login);
         }
     }
 
-    public void handleOnline(String[] tokens) {
+    private void handleOnline(String[] tokens) {
         String login = tokens[1];
         for(UserStatusListener listener : userStatusListeners){
             listener.online(login);
@@ -162,7 +185,7 @@ public class ChatClient {
     public boolean connect() {
         try {
             this.socket = new Socket(serverName, serverPort);
-            System.out.println("Client port is "+ socket.getPort());
+            System.out.println("Client port is "+ socket.getLocalPort());
             this.serverOut = socket.getOutputStream();
             this.serverIn = socket.getInputStream();
             this.bufferedIn = new BufferedReader(new InputStreamReader(serverIn));
@@ -177,7 +200,7 @@ public class ChatClient {
         userStatusListeners.add(listener);
     }
 
-    public void removeUserStatusListener(UserStatusListener listener){
+    private void removeUserStatusListener(UserStatusListener listener){
         userStatusListeners.remove(listener);
     }
 
@@ -185,7 +208,7 @@ public class ChatClient {
         messageListeners.add(listener);
     }
 
-    public void removeMessageListener(MessageListener listener){
+    private void removeMessageListener(MessageListener listener){
         messageListeners.remove(listener);
     }
 }

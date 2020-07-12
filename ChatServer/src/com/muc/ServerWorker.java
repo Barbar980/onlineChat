@@ -13,6 +13,7 @@ public class ServerWorker extends Thread{
     private final Server server;
     private String login = null;
     private OutputStream outputStream;
+    private OutputStream test2;
     private HashSet<String> topicSet = new HashSet<>();
 
     public ServerWorker(Server server, Socket clientSocket) {
@@ -80,6 +81,7 @@ public class ServerWorker extends Thread{
                     String msg = "unknown " + cmd + "\n";
                     outputStream.write(msg.getBytes());
                 }
+
             }
         }
         clientSocket.close();
@@ -191,7 +193,7 @@ public class ServerWorker extends Thread{
 
 
 
-    private void send(String msg) throws IOException {
+    public void send(String msg) throws IOException {
         if (login!= null){
             outputStream.write(msg.getBytes());
         }
